@@ -1,0 +1,106 @@
+{
+  "batch_ttfa_mean_ms": 1615.0,
+  "streaming_ttfa_mean_ms": 357.1,
+  "streaming_uncached_ttfa_mean_ms": 550.6,
+  "streaming_cached_filler_ttfa_mean_ms": 260.3,
+  "overall_ttfa_reduction_pct": 77.9,
+  "mean_rtf": 0.0816,
+  "mean_wer_pct": 9.34,
+  "barge_in_cancel_latency_ms": 0.014,
+  "cases": [
+    {
+      "case_id": "en_appointment",
+      "language": "en",
+      "has_filler": true,
+      "batch_ttfa_ms": 1460.9,
+      "streaming_ttfa_ms": 284.2,
+      "ttfa_reduction_pct": 80.5,
+      "streaming_rtf": 0.064,
+      "clauses_count": 2,
+      "engines_used": [
+        "memory_cache",
+        "piper_onnx"
+      ],
+      "stt_transcript": "One moment please, let me check that for you, your dental appointment is confirmed for Tuesday at 3.30pm.",
+      "wer_score": 0.1053
+    },
+    {
+      "case_id": "en_support_ticket",
+      "language": "en",
+      "has_filler": false,
+      "batch_ttfa_ms": 1710.4,
+      "streaming_ttfa_ms": 418.2,
+      "ttfa_reduction_pct": 75.6,
+      "streaming_rtf": 0.0992,
+      "clauses_count": 3,
+      "engines_used": [
+        "piper_onnx"
+      ],
+      "stt_transcript": "Thank you for calling customer support. I have created ticket number 4a29 and our team will call you back shortly.",
+      "wer_score": 0.05
+    },
+    {
+      "case_id": "en_reschedule",
+      "language": "en",
+      "has_filler": true,
+      "batch_ttfa_ms": 1602.2,
+      "streaming_ttfa_ms": 273.4,
+      "ttfa_reduction_pct": 82.9,
+      "streaming_rtf": 0.0779,
+      "clauses_count": 3,
+      "engines_used": [
+        "memory_cache",
+        "piper_onnx"
+      ],
+      "stt_transcript": "Let me look up your appointment in the calendar. We have an opening on Friday morning at 10 o'clock. Would that work for you?",
+      "wer_score": 0.0
+    },
+    {
+      "case_id": "de_termin_filler",
+      "language": "de",
+      "has_filler": true,
+      "batch_ttfa_ms": 1574.2,
+      "streaming_ttfa_ms": 298.7,
+      "ttfa_reduction_pct": 81.0,
+      "streaming_rtf": 0.061,
+      "clauses_count": 2,
+      "engines_used": [
+        "memory_cache",
+        "piper_onnx"
+      ],
+      "stt_transcript": "Ein Moment bitte, ich pr\u00fcfe das sofort f\u00fcr Sie. Determinen am Donnerstag um 14 Uhr ist jetzt festein getragen.",
+      "wer_score": 0.25
+    },
+    {
+      "case_id": "de_rueckruf",
+      "language": "de",
+      "has_filler": false,
+      "batch_ttfa_ms": 1741.7,
+      "streaming_ttfa_ms": 683.1,
+      "ttfa_reduction_pct": 60.8,
+      "streaming_rtf": 0.1442,
+      "clauses_count": 3,
+      "engines_used": [
+        "piper_onnx"
+      ],
+      "stt_transcript": "Vielen Dank f\u00fcr Ihren Anruf bei unserem Kunden-Savis. Wir haben Ihre Nachricht erhalten und wir rufen Sie heute noch zur\u00fcck.",
+      "wer_score": 0.05
+    },
+    {
+      "case_id": "de_kalender",
+      "language": "de",
+      "has_filler": true,
+      "batch_ttfa_ms": 1600.6,
+      "streaming_ttfa_ms": 185.1,
+      "ttfa_reduction_pct": 88.4,
+      "streaming_rtf": 0.0434,
+      "clauses_count": 3,
+      "engines_used": [
+        "memory_cache",
+        "piper_onnx"
+      ],
+      "stt_transcript": "Ich schau kurz in Ihren Terminkalende. Am Montag um 11 Uhr w\u00e4re noch ein Platz frei. Passt Ihnen das?",
+      "wer_score": 0.1053
+    }
+  ]
+}
