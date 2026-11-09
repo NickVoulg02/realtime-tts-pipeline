@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoiceStream-Eval | Real-Time TTS & Barge-In Console</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 1080px;
+      margin-inline: auto;
+    }
+    h1 { margin: 0 0 6px 0; font-size: 1.5rem; }
+    p.sub { margin: 0 0 20px 0; color: var(--muted); font-size: 0.95rem; }
+    .grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+    }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+    textarea, select, input {
+      width: 100%;
+      background: #0b1120;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+    .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .preset-btn {
+      background: #0b1120;
+      color: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .preset-btn:hover { border-color: var(--accent); }
+    .actions { display: flex; gap: 10px; margin-top: 8px; }
+    button.primary {
+      flex: 1;
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.danger {
+      background: var(--red);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .stat {
+      background: #0b1120;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .stat .val { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+    .stat .lbl { font-size: 0.78rem; color: var(--muted); }
+    #log {
+      background: #0b1120;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      height: 250px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.83rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <h1>VoiceStream-Eval: Real-Time TTS & Barge-In Console</h1>
+  <p class="sub">Asyncio Clause Chunking &bull; Piper Local CPU TTS (EN &amp; DE) &bull; Redis Filler Cache &bull; Instant Barge-In Cancellation</p>
+
+  <div class="grid">
+    <div class="card">
+      <label>Quick Phone Agent Presets (Click to Load)</label>
+      <div class="presets">
+        <button class="preset-btn" onclick="setPreset('en', 'One moment please, let me check that for you. I can confirm your appointment is scheduled for Thursday at 14:30 with Dr. Meyer.')">EN: Filler + Appointment</button>
+        <button class="preset-btn" onclick="setPreset('de', 'Einen Moment bitte, ich prüfe das sofort für Sie. Ihr Termin am Donnerstag um vierzehn Uhr dreißig ist bestätigt.')">DE: Filler + Termin (German)</button>
+        <button class="preset-btn" onclick="setPreset('en', 'Thank you for calling Nairon support. We have received your ticket number 4 8 2 9, and an engineer will call you back within fifteen minutes.')">EN: Multi-Clause Support</button>
+      </div>
+
+      <label for="textInput">Simulated Streaming LLM Response</label>
+      <textarea id="textInput" rows="4">One moment please, let me check that for you. I can confirm your appointment is scheduled for Thursday at 14:30 with Dr. Meyer.</textarea>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+        <div>
+          <label for="langSelect">Language</label>
+          <select id="langSelect">
+            <option value="en">English (en_US-lessac)</option>
+            <option value="de">Deutsch (de_DE-thorsten)</option>
+          </select>
+        </div>
+        <div>
+          <label for="modeSelect">Pipeline Mode</label>
+          <select id="modeSelect">
+            <option value="streaming">Streaming Clauses (Fast TTFA)</option>
+            <option value="batch">Batch Baseline (Waits for LLM)</option>
+          </select>
+        </div>
+        <div>
+          <label for="delayInput">LLM Token Delay (ms)</label>
+          <input id="delayInput" type="number" value="35" min="0" max="200" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" onclick="startSynthesis()">Stream &amp; Speak</button>
+        <button class="danger" onclick="triggerBargeIn()">Interrupt (Barge-In)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="metrics-row">
+        <div class="stat">
+          <div class="val" id="ttfaVal">-- ms</div>
+          <div class="lbl">Time-to-First-Audio (TTFA)</div>
+        </div>
+        <div class="stat">
+          <div class="val" id="rtfVal">--</div>
+          <div class="lbl">Real-Time Factor (RTF)</div>
+        </div>
+        <div class="stat">
+          <div class="val" id="clausesVal">0</div>
+          <div class="lbl">Clauses Emitted</div>
+        </div>
+        <div class="stat">
+          <div class="val" id="engineVal">--</div>
+          <div class="lbl">Engines / Cache Used</div>
+        </div>
+      </div>
+      <label>Live Stream &amp; Barge-In Event Log (<a href="/metrics" target="_blank" style="color:var(--accent)">View Prometheus /metrics</a>)</label>
+      <div id="log"></div>
+    </div>
+  </div>
+
+  <script>
+    let ws = null;
+    let audioQueue = [];
+    let isPlaying = false;
+    let currentAudio = null;
+
+    function logMsg(msg, color = "#f8fafc") {
+      const el = document.getElementById("log");
+      const div = document.createElement("div");
+      div.style.color = color;
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      el.appendChild(div);
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function setPreset(lang, text) {
+      document.getElementById("langSelect").value = lang;
+      document.getElementById("textInput").value = text;
+    }
+
+    function connectWs() {
+      const proto = location.protocol === "https:" ? "wss:" : "ws:";
+      ws = new WebSocket(`${proto}//${location.host}/ws/tts`);
+      ws.onopen = () => logMsg("Connected to /ws/tts real-time voice stream.", "#22c55e");
+      ws.onmessage = (ev) => {
+        const data = JSON.parse(ev.data);
+        if (data.type === "clause_audio") {
+          document.getElementById("ttfaVal").textContent = `${data.ttfa_ms} ms`;
+          document.getElementById("rtfVal").textContent = data.rtf;
+          document.getElementById("engineVal").textContent = data.engine_used;
+          logMsg(`Clause #${data.clause_index + 1} [${data.engine_used}]: "${data.clause_text}"`, "#38bdf8");
+          enqueueAudio(data.wav_base64);
+        } else if (data.type === "barge_in_ack") {
+          stopAudioPlayback();
+          logMsg("BARGE-IN ACK: Active TTS stream cancelled & audio queue flushed!", "#ef4444");
+        } else if (data.type === "turn_complete") {
+          document.getElementById("clausesVal").textContent = data.clauses_emitted;
+          document.getElementById("engineVal").textContent = (data.engines_used || []).join(", ") || "--";
+          logMsg(`Turn complete (mode=${data.mode}, TTFA=${data.ttfa_ms}ms, total=${data.total_turn_time_ms}ms)`, "#22c55e");
+        }
+      };
+    }
+
+    function enqueueAudio(base64Wav) {
+      audioQueue.push(base64Wav);
+      if (!isPlaying) playNext();
+    }
+
+    function playNext() {
+      if (audioQueue.length === 0) {
+        isPlaying = false;
+        return;
+      }
+      isPlaying = true;
+      const b64 = audioQueue.shift();
+      currentAudio = new Audio("data:audio/wav;base64," + b64);
+      currentAudio.onended = () => playNext();
+      currentAudio.play().catch(() => playNext());
+    }
+
+    function stopAudioPlayback() {
+      audioQueue = [];
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+      isPlaying = false;
+    }
+
+    function startSynthesis() {
+      stopAudioPlayback();
+      if (!ws || ws.readyState !== WebSocket.OPEN) connectWs();
+      const payload = {
+        type: "synthesize",
+        text: document.getElementById("textInput").value,
+        language: document.getElementById("langSelect").value,
+        mode: document.getElementById("modeSelect").value,
+        token_delay_ms: parseFloat(document.getElementById("delayInput").value || "35")
+      };
+      setTimeout(() => ws.send(JSON.stringify(payload)), ws.readyState === WebSocket.OPEN ? 0 : 300);
+    }
+
+    function triggerBargeIn() {
+      stopAudioPlayback();
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "barge_in" }));
+      }
+    }
+
+    connectWs();
+  </script>
+</body>
+</html>
+

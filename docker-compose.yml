@@ -1,0 +1,40 @@
+services:
+  tts-service:
+    build: .
+    container_name: voicestream-tts
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - LIVEKIT_URL=ws://livekit:7880
+      - LIVEKIT_API_KEY=devkey
+      - LIVEKIT_API_SECRET=secret
+    volumes:
+      - ./models:/app/models
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: voicestream-redis
+    ports:
+      - "6379:6379"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: voicestream-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - tts-service
+
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: voicestream-livekit
+    command: --dev --bind 0.0.0.0
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+
